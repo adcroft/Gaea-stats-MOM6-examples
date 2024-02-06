@@ -5,7 +5,7 @@ stages:
   - cleanup
 
 variables:
-  CACHE_DIR: "/lustre/f2/scratch/oar.gfdl.ogrp-account/runner/cache/"
+  CACHE_DIR: "/gpfs/f5/gfdl_o/scratch/oar.gfdl.ogrp-account/runner/cache/"
 
 # Run for all stages
 before_script:
