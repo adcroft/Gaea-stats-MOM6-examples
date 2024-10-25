@@ -4,8 +4,8 @@ stages:
   - tests
   - cleanup
 
-variables:
-  CACHE_DIR: "/gpfs/f5/gfdl_o/scratch/oar.gfdl.ogrp-account/runner/cache/"
+# Note: relies on runner providing $CACHE_DIR
+# e.g. https://gitlab.gfdl.noaa.gov/ogrp/mom6ci/Gaea-stats-MOM6-examples/-/settings/ci_cd
 
 # Run for all stages
 before_script:
@@ -19,21 +19,21 @@ before_script:
 gnu:repro:
   stage: builds
   tags:
-    - ncrc5
+    - mom6-ci-c5
   script:
     - make -f tools/MRS/Makefile pipeline-build-repro-gnu
 
 intel:repro:
   stage: builds
   tags:
-    - ncrc5
+    - mom6-ci-c5
   script:
     - make -f tools/MRS/Makefile pipeline-build-repro-intel
 
 pgi:repro:
   stage: builds
   tags:
-    - ncrc5
+    - mom6-ci-c5
   script:
     - make -f tools/MRS/Makefile pipeline-build-repro-pgi
 
@@ -41,7 +41,7 @@ pgi:repro:
 run:
   stage: run
   tags:
-    - ncrc5
+    - mom6-ci-c5
   script:
     - make -f tools/MRS/Makefile stats-pipeline-run
 
@@ -49,7 +49,7 @@ run:
 results:
   stage: tests
   tags:
-    - ncrc5
+    - mom6-ci-c5
   script:
     - cd ../regressions ; pwd
     - make -f ../MOM6-examples/tools/MRS/Makefile stats-pipeline-test
@@ -57,7 +57,7 @@ results:
 cleanup:
   stage: cleanup
   tags:
-    - ncrc5
+    - mom6-ci-c5
   before_script:
     - echo Skipping before-script
   script:
