@@ -1,64 +1,83 @@
 stages:
-  - builds
-  - run
-  - tests
-  - cleanup
+  - build_run_test
 
-# Note: relies on runner providing $CACHE_DIR
-# e.g. https://gitlab.gfdl.noaa.gov/ogrp/mom6ci/Gaea-stats-MOM6-examples/-/settings/ci_cd
-
-# Run for all stages
-before_script:
-  - echo Cache directory set to $CACHE_DIR
-  - echo -e "\e[0Ksection_start:`date +%s`:before_script[collapsed=true]\r\e[0KPre-script"
-  - git submodule init && git submodule update
-  - cd MOM6-examples
-  - echo -e "\e[0Ksection_end:`date +%s`:before_script\r\e[0K"
-
-# Compiles
 gnu:repro:
-  stage: builds
+  stage: build_run_test
   tags:
     - mom6-ci-c5
   script:
-    - make -f tools/MRS/Makefile pipeline-build-repro-gnu
+    - echo -e "\e[0Ksection_start:`date +%s`:setup[collapsed=true]\r\e[0KSetup working directory"
+    - git submodule update --init --recursive
+    - ( cd MOM6-examples && ln -s /gpfs/f5/gfdl_o/world-shared/datasets .datasets )
+    - echo -e "\e[0Ksection_end:`date +%s`:setup\r\e[0K"
+    # Compile executable
+    - echo -e "\e[0Ksection_start:`date +%s`:compile[collapsed=true]\r\e[0KCompiling models"
+    - make -j build.gnu > log.gnu.build
+    - echo -e "\e[0Ksection_end:`date +%s`:compile\r\e[0K"
+    # Run models
+    - |
+      sbatch -M c5 -N 8 -t 15:00 -A gfdl_o -q debug -J mom6_examples_tests -o log.gnu.$CI_PIPELINE_ID -W << EOF
+      #!/bin/sh
+      make -j run.gnu
+      EOF
+    # Check model ran properly
+    - make -s run.gnu
+    # Check results
+    - echo -e "\e[0Ksection_start:`date +%s`:test[collapsed=false]\r\e[0KResults"
+    - make -s -j test.all
+    - echo -e "\e[0Ksection_end:`date +%s`:test\r\e[0K"
+    - git diff --exit-code
 
 intel:repro:
-  stage: builds
+  stage: build_run_test
   tags:
     - mom6-ci-c5
   script:
-    - make -f tools/MRS/Makefile pipeline-build-repro-intel
+    - echo -e "\e[0Ksection_start:`date +%s`:setup[collapsed=true]\r\e[0KSetup working directory"
+    - git submodule update --init --recursive
+    - ( cd MOM6-examples && ln -s /gpfs/f5/gfdl_o/world-shared/datasets .datasets )
+    - echo -e "\e[0Ksection_end:`date +%s`:setup\r\e[0K"
+    # Compile executable
+    - echo -e "\e[0Ksection_start:`date +%s`:compile[collapsed=true]\r\e[0KCompiling models"
+    - make -j build.intel > log.intel.build
+    - echo -e "\e[0Ksection_end:`date +%s`:compile\r\e[0K"
+    # Run models
+    - |
+      sbatch -M c5 -N 8 -t 15:00 -A gfdl_o -q debug -J mom6_examples_tests -o log.intel.$CI_PIPELINE_ID -W << EOF
+      #!/bin/sh
+      make -j run.intel
+      EOF
+    # Check model ran properly
+    - make -s run.intel
+    # Check results
+    - echo -e "\e[0Ksection_start:`date +%s`:test[collapsed=false]\r\e[0KResults"
+    - make -s -j test.all
+    - echo -e "\e[0Ksection_end:`date +%s`:test\r\e[0K"
+    - git diff --exit-code
 
 pgi:repro:
-  stage: builds
+  stage: build_run_test
   tags:
     - mom6-ci-c5
   script:
-    - make -f tools/MRS/Makefile pipeline-build-repro-pgi
-
-# Runs
-run:
-  stage: run
-  tags:
-    - mom6-ci-c5
-  script:
-    - make -f tools/MRS/Makefile stats-pipeline-run
-
-# Tests
-results:
-  stage: tests
-  tags:
-    - mom6-ci-c5
-  script:
-    - cd ../regressions ; pwd
-    - make -f ../MOM6-examples/tools/MRS/Makefile stats-pipeline-test
-
-cleanup:
-  stage: cleanup
-  tags:
-    - mom6-ci-c5
-  before_script:
-    - echo Skipping before-script
-  script:
-    - rm $CACHE_DIR/*$CI_PIPELINE_ID.tgz
+    - echo -e "\e[0Ksection_start:`date +%s`:setup[collapsed=true]\r\e[0KSetup working directory"
+    - git submodule update --init --recursive
+    - ( cd MOM6-examples && ln -s /gpfs/f5/gfdl_o/world-shared/datasets .datasets )
+    - echo -e "\e[0Ksection_end:`date +%s`:setup\r\e[0K"
+    # Compile executable
+    - echo -e "\e[0Ksection_start:`date +%s`:compile[collapsed=true]\r\e[0KCompiling models"
+    - make -j build.pgi > log.pgi.build
+    - echo -e "\e[0Ksection_end:`date +%s`:compile\r\e[0K"
+    # Run models
+    - |
+      sbatch -M c5 -N 8 -t 15:00 -A gfdl_o -q debug -J mom6_examples_tests -o log.pgi.$CI_PIPELINE_ID -W << EOF
+      #!/bin/sh
+      make -j run.pgi
+      EOF
+    # Check model ran properly
+    - make -s run.pgi
+    # Check results
+    - echo -e "\e[0Ksection_start:`date +%s`:test[collapsed=false]\r\e[0KResults"
+    - make -s -j test.all
+    - echo -e "\e[0Ksection_end:`date +%s`:test\r\e[0K"
+    - git diff --exit-code
