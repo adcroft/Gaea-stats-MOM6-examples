@@ -3,7 +3,7 @@
 
 module unload intel cray-libsci cray-mpich PrgEnv-intel
 module load PrgEnv-intel intel/2023.2.0 cray-hdf5 cray-netcdf cray-mpich
-
+module unload cray-libsci
 module load python
 
 export CC=cc
